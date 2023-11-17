@@ -1,6 +1,6 @@
 import torch
 
-from model import ContextUnet
+from src.model import ContextUnet
 
 
 if __name__ == '__main__':
