@@ -15,15 +15,15 @@ help:
 
 
 format:
-	black app
+	black main
 
 
 lint:
-	black --check app
-	ruff check app
-	flake8 --statistics app
-	pylint -rn -sn --rcfile=.pylintrc app
-	mypy --strict --namespace-packages --explicit-package-bases app
+	black --check main
+	ruff check main
+	flake8 --statistics main
+	pylint -rn -sn --rcfile=.pylintrc main
+	mypy --strict --namespace-packages --explicit-package-bases main
 
 
 clean:
