@@ -9,7 +9,6 @@ help:
 	@echo "  - help     show help message"
 	@echo "  - format   run formatting tools"
 	@echo "  - lint    run python linting tools"
-	@echo "  - test     run pytest with coverage"
 	@echo "  - clean    remove temp python directories and their contents"
 	@echo ""
 

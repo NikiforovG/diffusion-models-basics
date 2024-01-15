@@ -32,8 +32,7 @@ class Conv3(nn.Module):
 class UnetDown(nn.Module):
     def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
-        layers: list[nn.Module] = [Conv3(in_channels, out_channels), nn.MaxPool2d(2)]
-        self.model = nn.Sequential(*layers)
+        self.model = nn.Sequential(Conv3(in_channels, out_channels), nn.MaxPool2d(2))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)  # type:ignore
@@ -42,12 +41,11 @@ class UnetDown(nn.Module):
 class UnetUp(nn.Module):
     def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
-        layers = [
+        self.model = nn.Sequential(
             nn.ConvTranspose2d(in_channels, out_channels, 2, 2),
             Conv3(out_channels, out_channels),
             Conv3(out_channels, out_channels),
-        ]
-        self.model = nn.Sequential(*layers)
+        )
 
     def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         x = torch.cat((x, skip), 1)
@@ -63,7 +61,7 @@ class ResidualConvBlock(nn.Module):
         # Check if input and output channels are the same for the residual connection
         self.same_channels = in_channels == out_channels
 
-        # Flag for whether or not to use residual connection
+        # Flag for whether to use residual connection
         self.is_res = is_res
 
         # First convolutional layer
@@ -83,38 +81,24 @@ class ResidualConvBlock(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # If using residual connection
         if self.is_res:
-            # Apply first convolutional layer
-            x1 = self.conv1(x)
-
-            # Apply second convolutional layer
-            x2 = self.conv2(x1)
+            # Apply convolutional layers
+            x1 = self.conv2(self.conv1(x))
 
             # If input and output channels are the same, add residual connection directly
             if self.same_channels:
-                out = x + x2
+                out = x + x1
             else:
                 # If not, apply a 1x1 convolutional layer to match dimensions before adding residual connection
-                shortcut = nn.Conv2d(x.shape[1], x2.shape[1], kernel_size=1, stride=1, padding=0).to(x.device)
+                shortcut = nn.Conv2d(x.shape[1], x1.shape[1], kernel_size=1, stride=1, padding=0).to(x.device)
                 # pylint:disable=not-callable
-                out = shortcut(x) + x2
+                out = shortcut(x) + x1
 
             # Normalize output tensor
             return out / 1.414  # type:ignore
 
         # If not using residual connection, return output of second convolutional layer
-        x1 = self.conv1(x)
-        x2 = self.conv2(x1)
-        return x2  # type:ignore
-
-    # Method to get the number of output channels for this block
-    def get_out_channels(self) -> int:
-        return self.conv2[0].out_channels  # type:ignore
-
-    # Method to set the number of output channels for this block
-    def set_out_channels(self, out_channels: int) -> None:
-        self.conv1[0].out_channels = out_channels
-        self.conv2[0].in_channels = out_channels
-        self.conv2[0].out_channels = out_channels
+        x1 = self.conv2(self.conv1(x))
+        return x1  # type:ignore
 
 
 class EmbedFC(nn.Module):
@@ -122,15 +106,12 @@ class EmbedFC(nn.Module):
         super().__init__()
         self.input_dim = input_dim
 
-        # define the layers for the network
-        layers = [
+        # create a PyTorch sequential model consisting of the defined layers
+        self.model = nn.Sequential(
             nn.Linear(input_dim, emb_dim),
             nn.GELU(),
             nn.Linear(emb_dim, emb_dim),
-        ]
-
-        # create a PyTorch sequential model consisting of the defined layers
-        self.model = nn.Sequential(*layers)
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # flatten the input tensor
@@ -158,7 +139,7 @@ class ContextUnet(nn.Module):
         self.down2 = UnetDown(n_feat, 2 * n_feat)  # down2 #[10, 512, 4, 4]
 
         # AvgPool2d((4)) transforms #[10, 512, 4, 4] to vector
-        self.to_vec = nn.Sequential(nn.AvgPool2d((4)), nn.GELU())
+        self.to_vec = nn.Sequential(nn.AvgPool2d(4), nn.GELU())
 
         # Embed the timestep and context labels with a one-layer fully connected neural network
         self.timeembed1 = EmbedFC(1, 2 * n_feat)
