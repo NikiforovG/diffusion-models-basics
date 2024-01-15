@@ -174,3 +174,4 @@ cython_debug/
 .DS_Store
 weights/
 data/
+.python-version
