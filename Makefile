@@ -9,21 +9,20 @@ help:
 	@echo "  - help     show help message"
 	@echo "  - format   run formatting tools"
 	@echo "  - lint    run python linting tools"
-	@echo "  - test     run pytest with coverage"
 	@echo "  - clean    remove temp python directories and their contents"
 	@echo ""
 
 
 format:
-	black .
+	black main
 
 
 lint:
-	black --check .
-	ruff check .
-	flake8 --statistics .
-	pylint -rn -sn --rcfile=.pylintrc .
-	mypy --strict --namespace-packages --explicit-package-bases .
+	black --check main
+	ruff check main
+	flake8 --statistics main
+	pylint -rn -sn --rcfile=.pylintrc main
+	mypy --strict --namespace-packages --explicit-package-bases main
 
 
 clean:
